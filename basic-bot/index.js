@@ -89,7 +89,7 @@ client.on("messageCreate", async (message) => {
                             { name: `- ${getEmoji(`${agent.role.displayName.toLowerCase()}`)} -`, value: "sample text", inline: false },
                             { name: `- ${getEmoji(agent_name_lower + "ability1")} -`, value: ability1, inline: true },
                             { name: `- ${getEmoji(agent_name_lower + "ability2")} -`, value: ability2, inline: true },
-                            { name: `- ${getEmoji(agent_name_lower + "grenade")} -`, value: ultimate, inline: true },
+                            { name: `- ${getEmoji(agent_name_lower + "grenade")} -`, value: grenade, inline: true },
                         )
                         .setImage(agent.bustPortrait)
 
