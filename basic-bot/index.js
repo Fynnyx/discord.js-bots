@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { Client, Intents, MessageEmbed } from "discord.js";
+import { Client, Intents, MessageEmbed, MessageActionRow, MessageButton, ReactionCollector } from "discord.js";
 import { readFile } from 'fs/promises'
 import axios from "axios";
 
@@ -37,6 +37,24 @@ function getEmoji(name) {
     return emoji;
 }
 
+
+// Send "Agents" Embed
+function getAgentsEmbed() {
+
+    return embed
+}
+
+client.on("interactionCreate", async interaction => {
+    if (interaction.isButton()) {
+        console.log(interaction);
+        if (interaction.customId === "agents-down") {
+            page = page - 1
+
+        }
+    }
+})
+
+
 client.on("messageCreate", async (message) => {
     // console.log(message)
     let channel = message.channel
@@ -53,26 +71,27 @@ client.on("messageCreate", async (message) => {
                 if (contentArray[1] !== 'undefined') {
                     var language = contentArray[1]
                 }
-                var page = 0
+                var page = 17
                 axios.get('https://valorant-api.com/v1/agents', {
                     params: {
                         language: language
                     }
                 }).then((response) => {
                     // console.log(response.data);
+                    var max_pages = response.data.data.length - 1
                     var agent = response.data.data[page];
                     var agent_name_lower = agent.displayName.toLowerCase()
 
                     for (var a in agent.abilities) {
                         if (agent.abilities[a].slot === "Ability1") {
                             var ability1 = agent.abilities[a].description
-                            
+
                         } else if (agent.abilities[a].slot === "Ability2") {
                             var ability2 = agent.abilities[a].description
 
                         } else if (agent.abilities[a].slot === "Grenade") {
                             var grenade = agent.abilities[a].description
-                            
+
                         } else if (agent.abilities[a].slot === "Ultimate") {
                             var ultimate = agent.abilities[a].description
 
@@ -84,16 +103,58 @@ client.on("messageCreate", async (message) => {
                         .setTitle(`- ${agent.displayName} -`)
                         .setURL(`https://playvalorant.com/en-us/agents/${agent_name_lower}/`)
                         .setDescription(agent.description)
-                        // .setThumbnail(agent.displayIcon)
+                        .setThumbnail(agent.displayIcon)
                         .addFields(
-                            { name: `- ${getEmoji(`${agent.role.displayName.toLowerCase()}`)} -`, value: "sample text", inline: false },
+                            { name: `- ${getEmoji(`${agent.role.displayName.toLowerCase()}`)} -`, value: agent.role.description, inline: false },
                             { name: `- ${getEmoji(agent_name_lower + "ability1")} -`, value: ability1, inline: true },
                             { name: `- ${getEmoji(agent_name_lower + "ability2")} -`, value: ability2, inline: true },
                             { name: `- ${getEmoji(agent_name_lower + "grenade")} -`, value: grenade, inline: true },
                         )
-                        .setImage(agent.bustPortrait)
+                    // .setImage(agent.bustPortrait)
 
-                    message.channel.send({ embeds: [agentsEmbed] })
+                    const row = new MessageActionRow()
+                    if (page == 0) {
+                        row.addComponents(
+                            new MessageButton()
+                                .setCustomId("agents-down")
+                                .setLabel("Down")
+                                .setDisabled(true)
+                                .setStyle("PRIMARY"),
+                            new MessageButton()
+                                .setCustomId("agents-up")
+                                .setLabel("Up")
+                                .setDisabled(false)
+                                .setStyle("PRIMARY")
+                        )
+                    } else if (page == max_pages) {
+                        row.addComponents(
+                            new MessageButton()
+                                .setCustomId("agents-down")
+                                .setLabel("Down")
+                                .setDisabled(false)
+                                .setStyle("PRIMARY"),
+                            new MessageButton()
+                                .setCustomId("agents-up")
+                                .setLabel("Up")
+                                .setDisabled(true)
+                                .setStyle("PRIMARY")
+                        )
+                    } else {
+                        row.addComponents(
+                            new MessageButton()
+                                .setCustomId("agents-down")
+                                .setLabel("Down")
+                                .setDisabled(false)
+                                .setStyle("PRIMARY"),
+                            new MessageButton()
+                                .setCustomId("agents-up")
+                                .setLabel("Up")
+                                .setDisabled(false)
+                                .setStyle("PRIMARY")
+                        )
+                    };
+
+                    message.channel.send({ embeds: [agentsEmbed], components: [row] })
                 });
                 break
             }
