@@ -2,8 +2,6 @@ import { config } from "dotenv";
 import { Client, Intents, MessageEmbed, MessageActionRow, MessageButton, ReactionCollector } from "discord.js";
 import { readFile } from 'fs/promises'
 import axios from "axios";
-import { resolve } from "path";
-import { rejects } from "assert";
 
 config();
 
@@ -39,9 +37,11 @@ function getEmoji(name) {
     return emoji;
 }
 
-async function getAgentsEmbed(language, page) {
 
-    axios.get('https://valorant-api.com/v1/agents', {
+// Send "Agents" Embed
+function getAgentsEmbed(language, page) {
+    
+    await axios.get('https://valorant-api.com/v1/agents', {
         params: {
             language: language
         }
@@ -49,8 +49,6 @@ async function getAgentsEmbed(language, page) {
         var max_pages = response.data.data.length - 1
         var agent = response.data.data[page];
         var agent_name_lower = agent.displayName.toLowerCase()
-
-        console.log(agentsEmbed);
 
         for (var a in agent.abilities) {
             if (agent.abilities[a].slot === "Ability1") {
@@ -80,50 +78,91 @@ async function getAgentsEmbed(language, page) {
                 { name: `- ${getEmoji(agent_name_lower + "ability2")} -`, value: ability2, inline: true },
                 { name: `- ${getEmoji(agent_name_lower + "grenade")} -`, value: grenade, inline: true },
             )
-        console.log("in function ", agentsEmbed);
+        // .setImage(agent.bustPortrait)
+        return agentsEmbed
     })
-    console.log(agentsEmbed)
-    return agentsEmbed
-}
+
+client.on("interactionCreate", async interaction => {
+        if (interaction.isButton()) {
+            console.log(interaction);
+            if (interaction.customId === "agents-down") {
+                page = page - 1
+
+            }
+        }
+    })
 
 
 client.on("messageCreate", async (message) => {
-    console.log(message)
-    let channel = message.channel
-    if (message.content.startsWith(PREFIX)) {
-        var content = message.content.replace(PREFIX, "");
-        var contentArray = content.split(" ");
-        var command = contentArray[0]
-        var language = 'en-US'
+        console.log(message)
+        let channel = message.channel
+        if (message.content.startsWith(PREFIX)) {
+            var content = message.content.replace(PREFIX, "");
+            var contentArray = content.split(" ");
+            var command = contentArray[0]
+            var language = 'en-US'
 
-        console.log(command);
+            console.log(command);
 
-        switch (command) {
-            case "agents": {
-                console.log("#############################")
-                let agentsEmbed = await getAgentsEmbed("en-US", 12)
-                console.log("-----------------------------------------------")
-                console.log("Test idk what to do ", agentsEmbed);
-                channel.send({ embeds: [agentsEmbed] })
+            switch (command) {
+                case "agents": {
+                    if (contentArray[1] !== 'undefined') {
+                        var language = contentArray[1]
+                    }
+                    let page = 17
 
-                break
-            };
+                    let agentsEmbed = getAgentsEmbed(language, page).then(
 
-            case "agent": {
-                console.log(contentArray[1])
-                if (contentArray[1] == undefined) {
-                    message.channel.send("Please select an agent!")
-                } else {
+                    console.log(agentsEmbed);
+
+                    const row = new MessageActionRow()
+                    let downdisabled = false
+                    let updisabled = false
+                    if (page == 0) {
+
+                    } else if (page == max_pages) {
+                        downdisabled = false
+                        updisabled = true
+
+                    } else {
+                        downdisabled = false
+                        updisabled = false
+                    };
+                    row.addComponents(
+                        new MessageButton()
+                            .setCustomId("agents-down")
+                            .setLabel("Down")
+                            .setDisabled(downdisabled)
+                            .setStyle("PRIMARY"),
+                        new MessageButton()
+                            .setCustomId("agents-up")
+                            .setLabel("Up")
+                            .setDisabled(updisabled)
+                            .setStyle("PRIMARY")
+                    )
+
+                    channel.send({ embeds: [agentsEmbed], components: [row] })
+
+                    break
+                    )
+                };
+
+                case "agent": {
+                    console.log(contentArray[1])
+                    if (contentArray[1] == undefined) {
+                        message.channel.send("Please select an agent!")
+                    } else {
 
 
+                    }
+                    break
                 }
-                break
-            }
-            default: {
-                console.log("command not found");
+                default: {
+                    console.log("command not found");
+                }
             }
         }
-    }
-})
+    })
+}
 
 client.login(process.env.TOKEN)
