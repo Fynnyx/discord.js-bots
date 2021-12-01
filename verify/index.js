@@ -1,7 +1,8 @@
 import { config } from "dotenv";
-import { Client, Intents, MessageEmbed, MessageActionRow, MessageButton, ReactionCollector } from "discord.js";
-import { readFile } from 'fs/promises'
+import { Client, Intents, MessageEmbed, MessageActionRow, MessageButton, ReactionCollector, GuildMember } from "discord.js";
+import { readFile, writeFile } from 'fs/promises'
 import axios from "axios";
+import { write } from "fs";
 
 config();
 
@@ -14,6 +15,13 @@ const client = new Client({
         Intents.FLAGS.GUILD_MEMBERS,
     ]
 })
+
+async function isOwner(member, guild) {
+    if (guild.ownerId != member.id) {
+        return false
+    }
+    return true
+}
 
 // const TOKEN = String(process.env.TOKEN);
 const PREFIX = data.prefix
@@ -28,18 +36,24 @@ client.on("messageCreate", async (message) => {
     if (message.content.startsWith(PREFIX)) {
         let content = message.content.replace(PREFIX, "");
         let contentArray = content.split(" ");
-        let command = contentArray[0]
+        let command = contentArray[0].toLowerCase()
 
         console.log(command);
 
         switch (command) {
-            case "test": {
-                channel.send("Test triggered")
+            case "help": {
+                channel.send("Help triggered")
                 break
             };
 
-            case "test2": {
-                channel.send("Test2 TRIGGRED")
+            case "sc":
+            case "setchannel":
+            case "set": {
+                if (await isOwner(message.author, message.guild) === true) {
+                    channel.send('Verify Channel `set` to ' + `${message.channel}`)
+                } else {
+                    channel.send("You must be the Owner of the Server to set the Channel.")
+                }
                 break
             }
             default: {
@@ -48,6 +62,13 @@ client.on("messageCreate", async (message) => {
             }
         }
     }
+})
+
+client.on("guildCreate", async (guild) => {
+    let guilds = JSON.parse(await readFile(new URL("./guilds.json", import.meta.url)))
+    let guildid = guild.id
+    guilds.guildid
+    await writeFile("./guilds.json", guilds)
 })
 
 client.login(process.env.TOKEN)
